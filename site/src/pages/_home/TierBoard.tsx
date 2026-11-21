@@ -97,7 +97,7 @@ function Speed({ r, isBest }: { r: BoardRow; isBest: boolean }) {
     <span
       className={`hm-fig hm-speed${best(isBest)}`}
       tabIndex={0}
-      aria-label={`P50 ${fmt.ms(r.time.median)} per case; P25 ${fmt.ms(r.time.q1)}, P75 ${fmt.ms(r.time.q3)}; failed tests excluded`}
+      aria-label={`P50 ${fmt.ms(r.time.median)} per case; P25 ${fmt.ms(r.time.q1)}, P75 ${fmt.ms(r.time.q3)}${r.time.step === null ? '' : `; STEP round trip P50 ${fmt.ms(r.time.step)}, timed apart`}; failed tests excluded`}
       onMouseMove={e => setTip({ x: e.clientX, y: e.clientY })}
       onFocus={e => at(e.currentTarget)}
       onMouseLeave={() => setTip(null)}
@@ -111,6 +111,12 @@ function Speed({ r, isBest }: { r: BoardRow; isBest: boolean }) {
           <small>
             P25 {fmt.ms(r.time.q1)} · P75 {fmt.ms(r.time.q3)}
             <br />
+            {r.time.step !== null && (
+              <>
+                STEP round trip P50 {fmt.ms(r.time.step)}, timed apart
+                <br />
+              </>
+            )}
             Failed tests excluded
           </small>
         </span>

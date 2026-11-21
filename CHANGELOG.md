@@ -42,6 +42,10 @@ a refused blend differently.
   significant digits, with any magnitude below a picometre as zero, and the generator uses the same
   maths on every platform. So the same seed draws the same cases and ids on every platform. The
   cases themselves are the same as before to within their last bits, and no verdict changes.
+- A case's `time_ms` leaves out the B17 round trip through STEP, which only kernels that read and
+  write STEP run; its time is the case's new `step_ms`, null where none ran. The site shows the
+  median of `step_ms` beside the median case time. Times from earlier results files count the round
+  trip and do not compare with later ones. No verdict changes.
 
 ### Tests added
 

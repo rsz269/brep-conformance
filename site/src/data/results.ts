@@ -76,6 +76,8 @@ export interface CaseRow {
   grade: Grade
   why: string
   timeMs: number | null
+  // The B17 round trip through STEP, which timeMs leaves out; null where none ran.
+  stepMs: number | null
   groupMedianMs: number | null
   groupLowConfidence: boolean
   // The files this kernel wrote for the case, as URLs: its drawing, null where it drew none, and
@@ -211,6 +213,7 @@ function parseCase(v: unknown, at: string, base: string | null): CaseRow {
     grade: gradeOf(result),
     why: typeof o.why === 'string' ? o.why : '',
     timeMs: numOrNull(o, 'time_ms', at),
+    stepMs: numOrNull(o, 'step_ms', at),
     groupMedianMs: numOrNull(o, 'group_median_ms', at),
     groupLowConfidence: o.group_low_confidence !== false,
     glb: fileUrl(base, exports.glb, 'glb', `${at}.exports.glb`),
@@ -380,6 +383,8 @@ export interface CaseTime {
   q3: number
   // How many cases the times are over: the kernel's passed cases.
   cases: number
+  // The median of the round trips through STEP among those cases; null where none ran one.
+  step: number | null
 }
 
 // A kernel's case times over its own passed cases, so no other kernel's results move them. Null
@@ -390,7 +395,17 @@ export function caseTime(r: Report): CaseTime | null {
     .map(c => c.timeMs!)
     .sort((a, b) => a - b)
   if (!v.length) return null
-  return { median: quantile(v, 0.5), q1: quantile(v, 0.25), q3: quantile(v, 0.75), cases: v.length }
+  const steps = r.cases
+    .filter(c => c.result === '1e-7' && c.timeMs !== null && c.stepMs !== null)
+    .map(c => c.stepMs!)
+    .sort((a, b) => a - b)
+  return {
+    median: quantile(v, 0.5),
+    q1: quantile(v, 0.25),
+    q3: quantile(v, 0.75),
+    cases: v.length,
+    step: steps.length ? quantile(steps, 0.5) : null,
+  }
 }
 
 // The segment that names a kernel's page in its report's URL: the kernel's name, or name@version

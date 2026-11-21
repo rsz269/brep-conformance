@@ -121,7 +121,7 @@ describe('boardRows', () => {
     date: '2026-11-09',
     adapter: { repo: `https://example.com/${kernel}-adapter/`, commit: '0'.repeat(40) },
     summary,
-    time: timed ? { median: 4, q1: 3, q3: 5, cases: 2 } : null,
+    time: timed ? { median: 4, q1: 3, q3: 5, cases: 2, step: null } : null,
   })
 
   it('keeps the leaderboard order as rank and sorts a missing time last', () => {

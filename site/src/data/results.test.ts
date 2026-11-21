@@ -229,7 +229,21 @@ describe('caseTime', () => {
         row('5', 't/a', 'refused', null, 1000),
       ]),
     )
-    expect(caseTime(a)).toEqual({ median: 3, q1: 2, q3: 51.5, cases: 3 })
+    expect(caseTime(a)).toEqual({ median: 3, q1: 2, q3: 51.5, cases: 3, step: null })
+  })
+
+  it('gives the round trips through STEP their own median, over passed cases that ran one', () => {
+    const a = parseReport(
+      raw('a', '1', [
+        { ...row('1', 't/a', 'pass', '1e-7', 1), step_ms: 10 },
+        { ...row('2', 't/a', 'pass', '1e-7', 2), step_ms: 30 },
+        row('3', 't/a', 'pass', '1e-7', 3),
+        { ...row('4', 't/a', 'fail', 'fail', 4), step_ms: 1000 },
+      ]),
+    )
+    expect(a.cases[0]!.stepMs).toBe(10)
+    expect(a.cases[2]!.stepMs).toBeNull()
+    expect(caseTime(a)).toEqual({ median: 2, q1: 1.5, q3: 2.5, cases: 3, step: 20 })
   })
 
   it('gives no time when the kernel passed no case', () => {

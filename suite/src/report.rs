@@ -251,6 +251,8 @@ pub fn flat(results: &Value, verified: bool) -> Value {
                 "why": c["why"],
                 "failure": c["failure"],
                 "time_ms": c["time_ms"],
+                // The B17 round trip's time, which `time_ms` leaves out; null where none ran.
+                "step_ms": c["step_ms"],
                 // Each step's time, so a reader can tell making the operands from the operation.
                 "ops": c["ops"].as_array().map(|ops| {
                     ops.iter()
@@ -325,7 +327,7 @@ mod tests {
             "time_limit_ms": 120000.0,
             "cases": [
                 {"id": "a", "test": test, "result": "1e-7", "kind": "exact", "time_ms": 3.0,
-                 "cold": true, "ops": [
+                 "step_ms": 8.0, "cold": true, "ops": [
                     {"op": "a", "outcome": "done", "ms": 1.0, "volume": 2.0},
                     {"op": "a ∪ b", "outcome": "done", "ms": 2.0}]},
                 {"id": "b", "test": test, "result": "timeout", "kind": "exact",
@@ -351,6 +353,11 @@ mod tests {
             (json!(true), Value::Null)
         );
         assert_eq!(b["ops"][0]["outcome"], "timeout");
+        // The round trip's time travels beside the case's, null where none ran.
+        assert_eq!(
+            (a["step_ms"].clone(), b["step_ms"].clone()),
+            (json!(8.0), Value::Null)
+        );
     }
 
     #[test]

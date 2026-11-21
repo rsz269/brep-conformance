@@ -71,7 +71,8 @@ A case's fields:
 | `ops`        | The steps run, below                                                                                                                                                                                          |
 | `error`      | Where the case's own solids could not be made: the kernel's reason                                                                                                                                            |
 | `interop`    | With `--peer`: whether the second kernel read this one's STEP file as the same solid                                                                                                                          |
-| `time_ms`    | The sum of its steps' times                                                                                                                                                                                   |
+| `time_ms`    | The sum of its steps' times, the B17 round trip through STEP left out                                                                                                                                         |
+| `step_ms`    | The B17 round trip's time: the operation again, written as STEP and read back; null where none ran                                                                                                            |
 | `cold`       | Whether the runner started a kernel for this case, so its time includes that kernel's first calls; absent where no kernel started. A worker the client replaces after a lost case is not marked               |
 | `asset`      | The name of its shape files                                                                                                                                                                                   |
 | `sound`      | `true` on a case judged as sound                                                                                                                                                                              |
@@ -125,9 +126,10 @@ site reads. It holds `format` (the same number as the results file's), `kernel`,
 `stand_ins`, a `summary` (the number of `cases`, the headline `pass_1e7` and the count of each
 result) and `cases`. `run` also carries the results file's timings: `started_unix`, `wall_ms`,
 `calibration_ms` and `time_limit_ms`. `cases` has one row per case, with `id`, `test`, `operation`,
-`kind`, `result`, `why`, `failure`, `time_ms`, `ops` (each step's `op`, `outcome` and `ms`, as the
-results file has them), `cold` (null for a results file written before it was recorded), `asset`,
-its test's `group_median_ms` (over every answered case of the test, cold ones included),
+`kind`, `result`, `why`, `failure`, `time_ms`, `step_ms` (null for a results file written before
+it was recorded), `ops` (each step's `op`, `outcome` and `ms`, as the results file has them),
+`cold` (null for a results file written before it was recorded), `asset`, its test's
+`group_median_ms` (over every answered case of the test, cold ones included),
 `group_low_confidence`, and, where files were drawn, `exports`: the `glb` key and the list of `step`
 keys, below the kernel's folder of [Assets](#assets).
 

@@ -20,9 +20,11 @@ older link names stays as it was; a rerun on the same suite version replaces the
   each primitive it has no constructor for.
 - `cases`: one row per case: `id`, `test`, `operation` (the test path's first part, its area),
   `kind` (exact, sound or rejection), `result`, `why`, `failure` (geometry or measurement),
-  `time_ms`, each step's time (`ops`: `op`, `outcome`, `ms`), `cold`, whether the runner started a
-  kernel for the case (null in a report from before it was recorded), the test's `group_median_ms`
-  (cold cases included), and `exports`, the shape files the kernel wrote for it.
+  `time_ms`, `step_ms` (the B17 round trip through STEP, which `time_ms` leaves out; null where none
+  ran or in a report from before it was recorded), each step's time (`ops`: `op`, `outcome`, `ms`),
+  `cold`, whether the runner started a kernel for the case (null in a report from before it was
+  recorded), the test's `group_median_ms` (cold cases included), and `exports`, the shape files the
+  kernel wrote for it.
 
 A test's URL segment is its path without the area, joined by dashes: `booleans/overlap/spheres` is
 `overlap-spheres` under `booleans`.
@@ -87,6 +89,11 @@ three-quarter mark. The grid's time for a test is the report's `group_median_ms`
 fastest of the kernels shown. A time the report rounds to 0 is shown but not compared, as no ratio
 can be taken against it. The grid's footer is the geometric mean of those ratios over the tests
 every kernel shown passed in full.
+
+A case's time leaves out the B17 round trip through STEP: only kernels that read and write STEP run
+it, and it times interchange, not the operation. Its median, over the passed cases that ran it, is
+shown beside the case time as the kernel's STEP time. Reports written before `step_ms` was recorded
+count the round trip in the case time, so their times are not comparable with later ones.
 
 ## Leaderboard
 

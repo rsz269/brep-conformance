@@ -40,6 +40,7 @@ function row(
     grade,
     why,
     timeMs,
+    stepMs: null,
     groupMedianMs: null,
     groupLowConfidence: true,
     glb: null,

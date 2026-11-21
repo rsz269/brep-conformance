@@ -1130,7 +1130,7 @@ fn run_feature<K: Kernel<Solid: Clone + 'static>>(k: &mut K, c: &Case, f: &Featu
                 o["error"] = json!(r.message());
                 // The round trip through STEP is a check on the side: a kernel that cannot read
                 // this file back is left out of that check, and judged on the rest.
-                let aside = name.ends_with("through STEP") && r.outcome() == Outcome::Unsupported;
+                let aside = is_round_trip(name) && r.outcome() == Outcome::Unsupported;
                 if !aside {
                     worst = worst.max(r.outcome());
                 }
@@ -3091,7 +3091,7 @@ fn run_case<K: Kernel<Solid: Clone + 'static>>(
                 o["error"] = json!(r.message());
                 // The round trip through STEP is a check on the side: a kernel that cannot read
                 // this file back is left out of that check, and judged on the rest.
-                let aside = name.ends_with("through STEP") && r.outcome() == Outcome::Unsupported;
+                let aside = is_round_trip(name) && r.outcome() == Outcome::Unsupported;
                 if !aside {
                     worst = worst.max(r.outcome());
                 }
@@ -3226,7 +3226,7 @@ fn run_case<K: Kernel<Solid: Clone + 'static>>(
                 o["error"] = json!(r.message());
                 // The round trip through STEP is a check on the side: a kernel that cannot read
                 // this file back is left out of that check, and judged on the rest.
-                let aside = name.ends_with("through STEP") && r.outcome() == Outcome::Unsupported;
+                let aside = is_round_trip(name) && r.outcome() == Outcome::Unsupported;
                 if !aside {
                     worst = worst.max(r.outcome());
                 }
@@ -3879,6 +3879,11 @@ pub const ASSET_GENERATOR: &str = "9";
 /// checks or how it ended without an answer; for one that is not a pass at the suite's tolerance,
 /// `why` and whether the `failure` is of geometry or of measurement; its time; and the name of its
 /// shape files.
+/// Whether a step is the B17 round trip: the case's operation again, written as STEP and read back.
+fn is_round_trip(op: &str) -> bool {
+    op.ends_with("through STEP")
+}
+
 fn judge(v: &mut Value, c: &Case) {
     let kind = if c.refuse {
         "rejection"
@@ -3931,15 +3936,26 @@ fn judge(v: &mut Value, c: &Case) {
             v["failure"] = json!(if shape { "geometry" } else { "measurement" });
         }
     }
-    let ms: f64 = v["ops"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter_map(|o| o["ms"].as_f64())
-        .sum();
+    // The B17 round trip checks interchange, not modelling, and only kernels that read and write
+    // STEP run it, so its time is kept apart from the case's.
+    let (mut ms, mut step_ms, mut round_trip) = (0.0, 0.0, false);
+    for o in v["ops"].as_array().into_iter().flatten() {
+        let Some(t) = o["ms"].as_f64() else { continue };
+        if is_round_trip(o["op"].as_str().unwrap_or("")) {
+            step_ms += t;
+            round_trip = true;
+        } else {
+            ms += t;
+        }
+    }
     v["kind"] = json!(kind);
     v["result"] = json!(result);
     v["time_ms"] = json!(ms);
+    v["step_ms"] = if round_trip {
+        json!(step_ms)
+    } else {
+        Value::Null
+    };
     v["asset"] = json!(crate::assets::hash(c));
 }
 
@@ -4171,6 +4187,43 @@ mod tests {
         judge(&mut pass, &c);
         assert_eq!(pass["result"], "1e-7");
         assert!(pass["why"].is_null());
+    }
+
+    #[test]
+    fn a_cases_time_leaves_out_its_round_trip_through_step_which_is_kept_apart() {
+        let c = cases(1)
+            .into_iter()
+            .find(|c| !c.refuse && c.exact.sound.is_none())
+            .unwrap();
+        let pass = json!([{"clause": "B1", "ok": true, "tier": "1e-7", "detail": "",
+                           "measures": [], "counts": []}]);
+        let mut boolean = json!({"outcome": "pass", "checks": pass.clone(), "ops": [
+            {"op": "a", "ms": 1.0}, {"op": "a ∪ b", "ms": 2.0},
+            {"op": "a ∪ b through STEP", "ms": 40.0}, {"op": "classify a ∩ b", "ms": 4.0}]});
+        judge(&mut boolean, &c);
+        assert_eq!(boolean["time_ms"], 7.0);
+        assert_eq!(boolean["step_ms"], 40.0);
+
+        let mut blend = json!({"outcome": "pass", "checks": pass.clone(), "ops": [
+            {"op": "fillet", "ms": 3.0}, {"op": "moved", "ms": 5.0},
+            {"op": "through STEP", "ms": 20.0}]});
+        judge(&mut blend, &c);
+        assert_eq!(blend["time_ms"], 8.0);
+        assert_eq!(blend["step_ms"], 20.0);
+
+        // A kernel that does not read or write STEP runs no round trip: there is no STEP time.
+        let mut none = json!({"outcome": "pass", "checks": pass.clone(), "ops": [
+            {"op": "fillet", "ms": 3.0}, {"op": "moved", "ms": 5.0}]});
+        judge(&mut none, &c);
+        assert_eq!(none["time_ms"], 8.0);
+        assert!(none["step_ms"].is_null());
+
+        // A test of reading and writing STEP is timed in full: its STEP step is the operation.
+        let mut step = json!({"outcome": "pass", "checks": pass, "ops": [
+            {"op": "base", "ms": 1.0}, {"op": "2 write_step+read_step", "ms": 9.0}]});
+        judge(&mut step, &c);
+        assert_eq!(step["time_ms"], 10.0);
+        assert!(step["step_ms"].is_null());
     }
 
     /// A kernel whose STEP reader runs past the time limit on a file named slow, and which, as a
