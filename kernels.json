@@ -46,6 +46,21 @@
       "reviewers": []
     },
     {
+      "kernel": "kentron",
+      "version": "0.19.3",
+      "license": "AGPL-3.0-or-later AND BSD-3-Clause AND MIT",
+      "source": "https://github.com/rsz269/kentron",
+      "maintained_by_suite": false,
+      "adapter": {
+        "repo": "https://github.com/rsz269/brep-conformance-kentron",
+        "commit": "b7140cf3317846819262b43f0ddc3a1a4fdd7afc",
+        "license": "MIT",
+        "build": ["cargo build --release --locked"],
+        "run": "{dir}/target/release/kentron-adapter"
+      },
+      "reviewers": ["rsz269"]
+    },
+    {
       "kernel": "next.BREP",
       "version": "0.24.0",
       "license": "LicenseRef-Autodrop3d",

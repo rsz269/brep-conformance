@@ -224,6 +224,7 @@ mod tests {
                 "arris",
                 "cad-kernel",
                 "cadrs",
+                "kentron",
                 "next.BREP",
                 "opencascade",
                 "solidcore",

@@ -24,6 +24,7 @@ per contract clause. It is not run on every pull request: it runs in release, by
   kernels [arris](https://github.com/springcraft-ai/brep-conformance-arris),
   [cad-kernel](https://github.com/springcraft-ai/brep-conformance-cad-kernel),
   [cadrs](https://github.com/springcraft-ai/brep-conformance-cadrs),
+  [kentron](https://github.com/rsz269/brep-conformance-kentron),
   [next.BREP](https://github.com/springcraft-ai/brep-conformance-next-brep),
   [solidcore](https://github.com/springcraft-ai/brep-conformance-solidcore) and
   [springrep](https://github.com/springcraft-ai/brep-conformance-springrep).
