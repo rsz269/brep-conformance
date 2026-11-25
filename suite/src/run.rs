@@ -2277,10 +2277,17 @@ fn to_piece(q: [f64; 2], p: &crate::generate::Piece, flat: &dyn Fn(Vec3) -> [f64
     }
     let n = 128;
     let t = |j: usize| p.t0 + (p.t1 - p.t0) * j as f64 / n as f64;
-    let best = (0..=n)
+    let whole = matches!(p.curve, Curve3::Circle { .. }) && (p.t1 - p.t0).abs() >= 1.0;
+    let best = (0..if whole { n } else { n + 1 })
         .min_by(|&i, &j| gap2(q, at(t(i))).total_cmp(&gap2(q, at(t(j)))))
         .unwrap_or(0);
-    let (mut lo, mut hi) = (t(best.saturating_sub(1)), t((best + 1).min(n)));
+    // A whole circle is periodic: its bracket runs past the seam instead of stopping at it.
+    let (mut lo, mut hi) = if whole {
+        let h = (p.t1 - p.t0) / n as f64;
+        (t(best) - h, t(best) + h)
+    } else {
+        (t(best.saturating_sub(1)), t((best + 1).min(n)))
+    };
     for _ in 0..60 {
         let (m1, m2) = (lo + (hi - lo) / 3.0, hi - (hi - lo) / 3.0);
         if gap2(q, at(m1)) < gap2(q, at(m2)) {
@@ -3995,6 +4002,40 @@ mod tests {
     use super::*;
     use crate::generate::cases;
     use crate::profile::Seg;
+
+    /// A point on a whole circle just short of its seam (t in (127.5/128, 1)) lies on the piece. Its
+    /// nearest samples are 0 and 128, the same point to the last bit or so; when rounding keeps
+    /// sample 0, the search must still look on the side of the seam the point is on. Circles in many
+    /// frames, so the rounding falls both ways.
+    #[test]
+    fn a_point_just_short_of_a_whole_circle_s_seam_lies_on_it() {
+        use crate::generate::{Curve3, Piece};
+        let flat = |p: Vec3| [p[0], p[1]];
+        let mut worst = (0.0_f64, 0usize, 0.0_f64);
+        for k in 0..64 {
+            let (a, b) = (0.37 + 0.731 * k as f64, 0.11 + 0.293 * k as f64);
+            let (sa, ca) = a.sin_cos();
+            let (sb, cb) = b.sin_cos();
+            // an orthonormal frame turned about z by a and tilted about x by b
+            let x = [ca, sa * cb, sa * sb];
+            let y = [-sa, ca * cb, ca * sb];
+            let curve = Curve3::Circle { c: [0.3 * k as f64, -1.7, 2.0], x, y, r: 1.547 };
+            let piece = Piece { curve, t0: 0.0, t1: 1.0, visible: true };
+            for t in [0.99630, 0.9975, 0.999, 0.9999] {
+                let d = to_piece(flat(curve.at(t)), &piece, &flat);
+                if d > worst.0 {
+                    worst = (d, k, t);
+                }
+            }
+        }
+        assert!(
+            worst.0 < 1e-9,
+            "frame {} at t = {}: a point on the circle reads {:e} from it",
+            worst.1,
+            worst.2,
+            worst.0
+        );
+    }
 
     #[test]
     fn a_mirrored_primitive_holds_the_mirror_image_of_every_point() {
