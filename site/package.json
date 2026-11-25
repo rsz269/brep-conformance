@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "postinstall": "node scripts/fetch-ds.mjs",
-    "dev": "vite",
+    "predev": "[ -n \"$BREP_REPORTS_DIR\" ] || node scripts/reports.ts fetch ../reports.json .reports",
+    "dev": "BREP_REPORTS_DIR=${BREP_REPORTS_DIR:-.reports} vite",
     "build": "vite build --outDir dist/client && vite build --ssr src/entry-server.tsx --outDir dist/server && node scripts/prerender.mjs",
     "preview": "vite preview --outDir dist/site",
     "test": "vitest run",

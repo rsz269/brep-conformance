@@ -66,13 +66,12 @@ look, not its results, so it never names a kernel. To change it, edit
 `CHROME` where it is not in the usual place), upload it under a new name, and point `SHARE_IMAGE` at
 that name: the CDN caches each name for good.
 
-The site reads `reports.json` and the reports it lists, `<run>/<kernel>-<hash>.json`, under
-`BREP_REPORTS_DIR`, and has no results when it is unset.
-`node scripts/reports.ts fetch ../reports.json DIR` fills a folder from the CDN, checking each file
-against the hash in its name. The tests read one run of two invented kernels in
-[`src/fixtures/reports/`](src/fixtures/reports/), whose files prettier leaves alone because their
-names pin their bytes. `SITE_BASE` sets the path the site is served under, such as
-`/brep-conformance/`. The dev server reads the reports once, so restart it after they change.
+`npm run dev` fetches the published reports into `.reports`. To show other reports, set
+`BREP_REPORTS_DIR` to a folder that `node scripts/reports.ts fetch <reports.json> DIR` filled. The
+tests read one run of two invented kernels in [`src/fixtures/reports/`](src/fixtures/reports/),
+whose files prettier leaves alone because their names pin their bytes. `SITE_BASE` sets the path the
+site is served under, such as `/brep-conformance/`. The dev server reads the reports once, so
+restart it after they change.
 
 A report shows its shape files from the CDN. For a run not yet published, set `BREP_ASSETS_DIR` to a
 folder laid out as the CDN is, `<suite>/<kernel>/<version>/<key>`, with each folder filled by
